@@ -1,0 +1,55 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.flag {
+  width: 100px;
+  height: auto;
+  border: 1px solid #ccc;
+}
+
+#topic {
+  color: #777;
+}
+
+#word {
+  font-size: 2.2rem;
+}
+
+button {
+  font-size: 1.1rem;
+  padding: 12px 20px;
+}
+input {
+  font-size: 1.1rem;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+#action {
+  width: 100%;
+}
+
+#result {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#result.ok {
+  color: #1a7f37;
+}
+
+#result.bad {
+  color: #c62828;
+}
+
+#example {
+  color: #555;
+  font-style: italic;
+}
