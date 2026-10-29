@@ -6,30 +6,118 @@ body {
   text-align: center;
 }
 
+/* Атрибут hidden должен всегда прятать элемент */
+[hidden] {
+  display: none !important;
+}
+
 .flag {
   width: 100px;
   height: auto;
   border: 1px solid #ccc;
 }
 
-#topic {
+.muted,
+#topic,
+#progress {
   color: #777;
 }
 
-#word {
-  font-size: 2.2rem;
-}
-
+/* Кнопки и поля */
 button {
   font-size: 1.1rem;
   padding: 12px 20px;
+  cursor: pointer;
 }
-input {
+
+button.secondary {
+  background: #f0f0f0;
+  border: 1px solid #bbb;
+}
+
+button.small {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+input[type="text"] {
   font-size: 1.1rem;
   padding: 12px;
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 12px;
+}
+
+/* Настройка теста */
+fieldset {
+  text-align: left;
+  margin: 0 0 16px;
+  padding: 8px 12px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+legend {
+  font-weight: bold;
+  padding: 0 6px;
+}
+
+.option {
+  display: block;
+  padding: 6px 0;
+}
+
+.option.all {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.option.disabled {
+  color: #999;
+}
+
+/* Тест */
+.quiz-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+#prompt {
+  font-size: 2.2rem;
+  margin: 8px 0;
+}
+
+#hint {
+  color: #777;
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+#chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+#chars button {
+  font-size: 1.1rem;
+  padding: 8px 14px;
 }
 
 #action {
@@ -49,7 +137,17 @@ input {
   color: #c62828;
 }
 
+#extra {
+  color: #555;
+}
+
 #example {
   color: #555;
   font-style: italic;
+}
+
+/* Итоги */
+#mistakes {
+  text-align: left;
+  padding-left: 20px;
 }

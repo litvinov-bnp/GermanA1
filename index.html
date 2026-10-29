@@ -5,31 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Немецкие слова</title>
   <link rel="stylesheet" href="style.css">
+  <script src="storage.js" defer></script>
+  <script src="quiz.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
-  <svg class="flag" viewBox="0 0 5 3" role="img" aria-label="Флаг Германии">
-    <rect width="5" height="1" y="0" fill="#000000"/>
-    <rect width="5" height="1" y="1" fill="#DD0000"/>
-    <rect width="5" height="1" y="2" fill="#FFCE00"/>
-  </svg>
 
-  <h1>Hallo, Deutsch!</h1>
-  <p>Приложение для изучения 1000 немецких слов (Goethe A1 Wortliste + Grundwortschatz)</p>
+  <!-- Экран 1: главное меню -->
+  <section class="screen" id="screen-menu">
+    <svg class="flag" viewBox="0 0 5 3" role="img" aria-label="Флаг Германии">
+      <rect width="5" height="1" y="0" fill="#000000"/>
+      <rect width="5" height="1" y="1" fill="#DD0000"/>
+      <rect width="5" height="1" y="2" fill="#FFCE00"/>
+    </svg>
+    <h1>Hallo, Deutsch!</h1>
+    <p>Приложение для изучения 1000 немецких слов (Goethe A1 Wortliste + Grundwortschatz)</p>
+    <p id="load-status">Загрузка словаря…</p>
+    <div class="stack">
+      <button id="btn-study" disabled>Изучение</button>
+      <button id="btn-stats" disabled>Статистика</button>
+    </div>
+  </section>
 
-  <main>
+  <!-- Экран 2: настройка теста -->
+  <section class="screen" id="screen-setup" hidden>
+    <h2>Настройка теста</h2>
+
+    <fieldset>
+      <legend>Темы</legend>
+      <label class="option all"><input type="checkbox" id="all-topics"> Все темы</label>
+      <div id="topics"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Количество слов</legend>
+      <div id="count-options"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Тип теста</legend>
+      <div id="type-options"></div>
+    </fieldset>
+
+    <p id="setup-info"></p>
+    <div class="stack">
+      <button id="btn-start">Начать</button>
+      <button id="btn-setup-back" class="secondary">Назад</button>
+    </div>
+  </section>
+
+  <!-- Экран 3: тест -->
+  <section class="screen" id="screen-quiz" hidden>
+    <div class="quiz-top">
+      <span id="progress"></span>
+      <button id="btn-finish" class="secondary small">Закончить</button>
+    </div>
+
     <p id="topic"></p>
-    <h2 id="word">Загрузка…</h2>
+    <h2 id="prompt"></h2>
+    <p id="hint"></p>
 
     <form id="quiz">
-      <input id="answer" type="text" placeholder="Перевод по-русски"
+      <input id="answer" type="text" placeholder="Ваш ответ"
              autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div id="chars"></div>
       <button id="action" type="submit">Проверить</button>
     </form>
 
     <p id="result"></p>
+    <p id="extra"></p>
     <p id="example"></p>
-  </main>
-  
+  </section>
+
+  <!-- Экран 4: итоги теста -->
+  <section class="screen" id="screen-result" hidden>
+    <h2>Итоги</h2>
+    <p id="result-summary"></p>
+    <div id="mistakes-box" hidden>
+      <h3>Над чем стоит поработать</h3>
+      <ul id="mistakes"></ul>
+    </div>
+    <div class="stack">
+      <button id="btn-again">Ещё раз</button>
+      <button id="btn-result-menu" class="secondary">В меню</button>
+    </div>
+  </section>
+
+  <!-- Экран 5: статистика -->
+  <section class="screen" id="screen-stats" hidden>
+    <h2>Статистика</h2>
+    <p id="stats-summary"></p>
+    <p class="muted">Список трудных слов появится на следующем шаге.</p>
+    <button id="btn-stats-back" class="secondary">В меню</button>
+  </section>
+
 </body>
 </html>
