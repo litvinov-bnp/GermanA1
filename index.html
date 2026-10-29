@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="storage.js" defer></script>
   <script src="quiz.js" defer></script>
+  <script src="stats.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -95,8 +96,29 @@
   <section class="screen" id="screen-stats" hidden>
     <h2>Статистика</h2>
     <p id="stats-summary"></p>
-    <p class="muted">Список трудных слов появится на следующем шаге.</p>
-    <button id="btn-stats-back" class="secondary">В меню</button>
+
+    <div id="stats-details" hidden>
+      <h3>По типам вопросов</h3>
+      <ul id="stats-types" class="plain"></ul>
+
+      <h3>По темам</h3>
+      <ul id="stats-topics" class="plain"></ul>
+
+      <h3>Трудные слова</h3>
+      <p class="muted" id="hard-note"></p>
+      <ol id="stats-hard" class="plain"></ol>
+    </div>
+
+    <h3>Данные</h3>
+    <p class="muted">Статистика хранится только в этом браузере. Экспорт сохраняет её в файл, импорт загружает из файла (так можно перенести данные на другое устройство).</p>
+    <div class="stack">
+      <button id="btn-export" class="secondary">Экспорт в файл</button>
+      <button id="btn-import" class="secondary">Импорт из файла</button>
+      <button id="btn-reset" class="secondary danger">Сбросить статистику</button>
+      <p id="data-message" class="muted"></p>
+      <button id="btn-stats-back">В меню</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" hidden>
   </section>
 
 </body>

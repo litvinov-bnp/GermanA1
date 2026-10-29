@@ -34,6 +34,20 @@ function loadStats() {
   return readStorage(STATS_KEY, {});
 }
 
+// Заменить всю статистику (импорт из файла)
+function replaceStats(stats) {
+  writeStorage(STATS_KEY, stats);
+}
+
+// Удалить всю статистику
+function clearStats() {
+  try {
+    localStorage.removeItem(STATS_KEY);
+  } catch (e) {
+    // ничего не делаем
+  }
+}
+
 // Записать результат одного ответа.
 // Структура: stats[id слова][тип вопроса] = { right, wrong, last }
 function recordAnswer(wordId, type, isRight) {

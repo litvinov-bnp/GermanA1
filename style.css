@@ -151,3 +151,30 @@ legend {
   text-align: left;
   padding-left: 20px;
 }
+
+/* Статистика */
+h3 {
+  margin: 24px 0 8px;
+}
+
+ul.plain,
+ol.plain {
+  text-align: left;
+  padding-left: 20px;
+  margin: 0;
+}
+
+ul.plain {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.plain li,
+ol.plain li {
+  padding: 4px 0;
+}
+
+button.danger {
+  color: #c62828;
+  border-color: #c62828;
+}

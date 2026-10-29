@@ -281,25 +281,104 @@ function finishQuiz() {
 
 // ---------- Статистика ----------
 
+function percent(right, total) {
+  return total === 0 ? 0 : Math.round(right / total * 100);
+}
+
+function addItem(list, text) {
+  const li = document.createElement("li");
+  li.textContent = text;
+  list.append(li);
+}
+
 function renderStats() {
-  const stats = loadStats();
-  let right = 0, wrong = 0, touched = 0;
-  for (const id in stats) {
-    touched += 1;
-    for (const type in stats[id]) {
-      right += stats[id][type].right;
-      wrong += stats[id][type].wrong;
+  const s = summarizeStats(loadStats(), words);
+  $("data-message").textContent = "";
+
+  if (s.total === 0) {
+    $("stats-summary").textContent = "Пока нет данных. Пройдите хотя бы один тест.";
+    $("stats-details").hidden = true;
+    return;
+  }
+
+  $("stats-summary").textContent =
+    `Всего ответов: ${s.total}. Верных: ${s.right} (${percent(s.right, s.total)}%). ` +
+    `Слов затронуто: ${s.touched} из ${words.length}.`;
+  $("stats-details").hidden = false;
+
+  // по типам вопросов
+  const types = $("stats-types");
+  types.replaceChildren();
+  for (const type in s.byType) {
+    const t = s.byType[type];
+    const total = t.right + t.wrong;
+    const label = QUESTION_TYPES[type] ? QUESTION_TYPES[type].label : type;
+    addItem(types, `${label}: ${percent(t.right, total)}% верных (${total} ответов)`);
+  }
+
+  // по темам, в порядке следования тем в словаре
+  const topics = $("stats-topics");
+  topics.replaceChildren();
+  for (const t of getTopics()) {
+    const d = s.byTopic.get(t.name);
+    if (!d) continue;
+    const total = d.right + d.wrong;
+    addItem(topics, `${t.name}: ${percent(d.right, total)}% верных (${total} ответов)`);
+  }
+
+  // трудные слова
+  const hard = $("stats-hard");
+  hard.replaceChildren();
+  const LIMIT = 30;
+  if (s.hard.length === 0) {
+    $("hard-note").textContent =
+      "Пока таких нет. Трудным считается слово, на которое было не меньше " +
+      `${HARD_MIN_ATTEMPTS} ответов и не меньше ${Math.round(HARD_MIN_ERROR_RATE * 100)}% из них неверные.`;
+  } else {
+    $("hard-note").textContent =
+      `Всего: ${s.hard.length}` + (s.hard.length > LIMIT ? `, показаны первые ${LIMIT}.` : ".") +
+      " Самые трудные сверху.";
+    for (const h of s.hard.slice(0, LIMIT)) {
+      const total = h.right + h.wrong;
+      addItem(hard, `${h.word.de} — ${h.word.ru} (ошибок ${h.wrong} из ${total})`);
     }
   }
-  const total = right + wrong;
-  if (total === 0) {
-    $("stats-summary").textContent = "Пока нет данных. Пройдите хотя бы один тест.";
-  } else {
-    const percent = Math.round(right / total * 100);
-    $("stats-summary").textContent =
-      `Всего ответов: ${total}. Верных: ${right} (${percent}%). ` +
-      `Слов затронуто: ${touched} из ${words.length}.`;
+}
+
+// ---------- Экспорт, импорт, сброс ----------
+
+function exportStats() {
+  const data = JSON.stringify(loadStats(), null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "german-stats-" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  $("data-message").textContent = "Файл со статистикой сохранён.";
+}
+
+async function importStats(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    if (!isValidStats(data)) throw new Error("bad format");
+    if (!confirm("Текущая статистика будет заменена данными из файла. Продолжить?")) return;
+    replaceStats(data);
+    renderStats();
+    $("data-message").textContent = "Статистика загружена из файла.";
+  } catch (e) {
+    $("data-message").textContent = "Не удалось прочитать файл: это не файл статистики.";
   }
+}
+
+function resetStats() {
+  if (!confirm("Удалить всю статистику? Это нельзя отменить. Перед сбросом можно сделать экспорт.")) return;
+  clearStats();
+  renderStats();
+  $("data-message").textContent = "Статистика сброшена.";
 }
 
 // ---------- Запуск ----------
@@ -334,6 +413,14 @@ async function start() {
   });
   $("btn-result-menu").addEventListener("click", () => showScreen("menu"));
   $("btn-stats-back").addEventListener("click", () => showScreen("menu"));
+  $("btn-export").addEventListener("click", exportStats);
+  $("btn-reset").addEventListener("click", resetStats);
+  $("btn-import").addEventListener("click", () => $("import-file").click());
+  $("import-file").addEventListener("change", event => {
+    const file = event.target.files[0];
+    event.target.value = ""; // чтобы можно было выбрать тот же файл ещё раз
+    if (file) importStats(file);
+  });
 
   try {
     await loadWords();
