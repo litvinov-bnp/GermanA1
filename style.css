@@ -1,14 +1,33 @@
+:root {
+  --teal: #55d3c4;
+  --teal-dark: #3fbfb0;
+  --orange: #ffa14a;
+  --orange-dark: #f58d2e;
+  --ok: #1a7f37;
+  --bad: #c62828;
+}
+
 body {
+  background-color: #effffd;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'%3E%3Cpath fill='%23a5cbce' fill-opacity='0.5' d='M14 16H9v-2h5V9.87a4 4 0 1 1 2 0V14h5v2h-5v15.95A10 10 0 0 0 23.66 27l-3.46-2 8.2-2.2-2.9 5a12 12 0 0 1-21 0l-2.89-5 8.2 2.2-3.47 2A10 10 0 0 0 14 31.95V16zm40 40h-5v-2h5v-4.13a4 4 0 1 1 2 0V54h5v2h-5v15.95A10 10 0 0 0 63.66 67l-3.47-2 8.2-2.2-2.88 5a12 12 0 0 1-21.02 0l-2.88-5 8.2 2.2-3.47 2A10 10 0 0 0 54 71.95V56zm-39 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm40-40a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM15 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm40 40a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'%3E%3C/path%3E%3C/svg%3E");
   font-family: system-ui, sans-serif;
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 16px;
   text-align: center;
 }
 
 /* Атрибут hidden должен всегда прятать элемент */
 [hidden] {
   display: none !important;
+}
+
+/* Каждый экран лежит на светлой «карточке» с лёгкой тенью */
+.screen {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px 16px;
 }
 
 .flag {
@@ -23,24 +42,50 @@ body {
   color: #777;
 }
 
-/* Кнопки и поля */
+/* Кнопки: по умолчанию бирюзовые с белым шрифтом */
 button {
-  font-size: 1.1rem;
+  font-family: inherit;
+  font-size: 1.3rem;
+  font-weight: normal;
   padding: 12px 20px;
+  color: #fff;
+  background: var(--teal);
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-button.secondary {
+button:hover:not(:disabled) {
+  background: var(--teal-dark);
+}
+
+/* Оранжевые: «Закончить», «Не знаю», «Назад», «В меню», «Сбросить статистику» */
+button.orange {
+  background: var(--orange);
+}
+
+button.orange:hover:not(:disabled) {
+  background: var(--orange-dark);
+}
+
+/* Нейтральные серые: кнопки озвучки */
+button.neutral {
+  color: #222;
   background: #f0f0f0;
   border: 1px solid #bbb;
 }
 
+button.neutral:hover:not(:disabled) {
+  background: #e4e4e4;
+}
+
 button.small {
-  font-size: 0.9rem;
+  font-size: 1rem;
   padding: 6px 12px;
 }
 
 button:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -107,6 +152,14 @@ legend {
   min-height: 1.2em;
 }
 
+#audio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
 #chars {
   display: flex;
   flex-wrap: wrap;
@@ -116,12 +169,23 @@ legend {
 }
 
 #chars button {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   padding: 8px 14px;
 }
 
-#action {
-  width: 100%;
+#quiz .stack {
+  margin-top: 0;
+}
+
+/* Поле ответа после проверки окрашивается так же, как сообщение о результате */
+#answer.ok {
+  color: var(--ok);
+  font-weight: bold;
+}
+
+#answer.bad {
+  color: var(--bad);
+  font-weight: bold;
 }
 
 #result {
@@ -130,11 +194,11 @@ legend {
 }
 
 #result.ok {
-  color: #1a7f37;
+  color: var(--ok);
 }
 
 #result.bad {
-  color: #c62828;
+  color: var(--bad);
 }
 
 #extra {
@@ -172,18 +236,4 @@ ul.plain {
 ul.plain li,
 ol.plain li {
   padding: 4px 0;
-}
-
-button.danger {
-  color: #c62828;
-  border-color: #c62828;
-}
-
-/* Озвучка */
-#audio-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 12px;
 }

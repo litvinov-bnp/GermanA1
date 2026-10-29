@@ -101,7 +101,7 @@ function renderSetup() {
     input.addEventListener("change", onSetupChange);
     typeBox.append(label);
   }
-  const mixed = makeOption("radio", "type", "mixed", "Смешанный (все доступные типы вперемешку)",
+  const mixed = makeOption("radio", "type", "mixed", "Смешанный (все типы вперемешку)",
     settings.type === "mixed", false);
   mixed.input.addEventListener("change", onSetupChange);
   typeBox.append(mixed.label);
@@ -198,7 +198,9 @@ function showQuestion() {
 
   const input = $("answer");
   input.value = "";
-  input.disabled = false;
+  input.readOnly = false;
+  input.className = "";
+  $("btn-skip").hidden = false;
   input.placeholder = toDe ? "Ответ по-немецки" : "Перевод по-русски";
   input.focus();
 
@@ -229,6 +231,18 @@ function checkAnswer() {
   if (text.trim() === "") return;
 
   const ok = toDe ? isCorrectDe(text, word) : isCorrectRu(text, word);
+  showFeedback(ok, false);
+}
+
+// Кнопка «Не знаю»: засчитывается как ошибка, сразу показываем правильный ответ
+function skipAnswer() {
+  if (answered) return;
+  showFeedback(false, true);
+}
+
+function showFeedback(ok, skipped) {
+  const { word, type } = question;
+  const toDe = QUESTION_TYPES[type].answerLang === "de";
   recordAnswer(word.id, type, ok);
 
   if (ok) {
@@ -239,22 +253,36 @@ function checkAnswer() {
   }
 
   const correct = toDe ? word.de : word.ru;
-  $("result").textContent = ok ? "Верно! " + correct : "Неверно. Правильно: " + correct;
+  if (ok) {
+    $("result").textContent = "Верно!";
+  } else if (skipped) {
+    $("result").textContent = "Правильно: " + correct;
+  } else {
+    $("result").textContent = "Неверно. Правильно: " + correct;
+  }
   $("result").className = ok ? "ok" : "bad";
+
+  // тот же цвет и шрифт на самом поле ответа
+  const input = $("answer");
+  input.className = skipped ? "" : (ok ? "ok" : "bad");
+  input.readOnly = true;
+  // при верном ответе по-русски дописываем в поле полный перевод (все варианты)
+  if (ok && !toDe) input.value = word.ru;
 
   const extra = [];
   if (type.startsWith("audio")) extra.push(`${word.de} — ${word.ru}`);
   if (word.pos === "сущ.") {
-    if (word.plural) extra.push("Мн. число: " + word.plural);
+    if (word.plural) extra.push("Мн. число: die " + word.plural);
     else if (word.plural_only) extra.push("Только во мн. числе");
+    else extra.push("Мн. число: нет");
   }
   $("extra").textContent = extra.join(" · ");
   $("example").textContent = word.example_de + " — " + word.example_ru;
 
   answered = true;
   updateAudioRow();
-  $("answer").disabled = true;
   $("chars").hidden = true;
+  $("btn-skip").hidden = true;
   $("action").textContent = isLastQuestion(session) ? "Результаты" : "Дальше";
   $("action").focus();
 }
@@ -273,7 +301,7 @@ function onQuizSubmit(event) {
 // Вставить немецкую букву в позицию курсора
 function insertChar(ch) {
   const input = $("answer");
-  if (input.disabled) return;
+  if (input.readOnly) return;
   input.setRangeText(ch, input.selectionStart, input.selectionEnd, "end");
   input.focus();
 }
@@ -307,6 +335,13 @@ function percent(right, total) {
   return total === 0 ? 0 : Math.round(right / total * 100);
 }
 
+// Сортировка: сначала больший процент верных, при равенстве больше ответов
+function sortByPercent(rows) {
+  return [...rows].sort((a, b) =>
+    b.right / b.total - a.right / a.total || b.total - a.total
+  );
+}
+
 function addItem(list, text) {
   const li = document.createElement("li");
   li.textContent = text;
@@ -317,35 +352,47 @@ function renderStats() {
   const s = summarizeStats(loadStats(), words);
   $("data-message").textContent = "";
 
+  const summary = $("stats-summary");
+  summary.replaceChildren();
+
   if (s.total === 0) {
-    $("stats-summary").textContent = "Пока нет данных. Пройдите хотя бы один тест.";
+    $("stats-empty").textContent = "Пока нет данных. Пройдите хотя бы один тест.";
+    $("stats-empty").hidden = false;
     $("stats-details").hidden = true;
     return;
   }
-
-  $("stats-summary").textContent =
-    `Всего ответов: ${s.total}. Верных: ${s.right} (${percent(s.right, s.total)}%). ` +
-    `Слов затронуто: ${s.touched} из ${words.length}.`;
+  $("stats-empty").hidden = true;
   $("stats-details").hidden = false;
 
-  // по типам вопросов
+  addItem(summary, `Всего ответов: ${s.total}`);
+  addItem(summary, `Верных: ${s.right} (${percent(s.right, s.total)}%)`);
+  addItem(summary, `Слов затронуто: ${s.touched} из ${words.length}`);
+
+  // по типам тестов: от большего процента верных к меньшему
   const types = $("stats-types");
   types.replaceChildren();
-  for (const type in s.byType) {
+  const typeRows = Object.keys(s.byType).map(type => {
     const t = s.byType[type];
-    const total = t.right + t.wrong;
-    const label = QUESTION_TYPES[type] ? QUESTION_TYPES[type].label : type;
-    addItem(types, `${label}: ${percent(t.right, total)}% верных (${total} ответов)`);
+    return {
+      label: QUESTION_TYPES[type] ? QUESTION_TYPES[type].label : type,
+      right: t.right,
+      total: t.right + t.wrong
+    };
+  });
+  for (const r of sortByPercent(typeRows)) {
+    addItem(types, `${r.label}: ${percent(r.right, r.total)}% верных (${r.total} ответов)`);
   }
 
-  // по темам, в порядке следования тем в словаре
+  // по темам: от большего процента верных к меньшему
   const topics = $("stats-topics");
   topics.replaceChildren();
+  const topicRows = [];
   for (const t of getTopics()) {
     const d = s.byTopic.get(t.name);
-    if (!d) continue;
-    const total = d.right + d.wrong;
-    addItem(topics, `${t.name}: ${percent(d.right, total)}% верных (${total} ответов)`);
+    if (d) topicRows.push({ label: t.name, right: d.right, total: d.right + d.wrong });
+  }
+  for (const r of sortByPercent(topicRows)) {
+    addItem(topics, `${r.label}: ${percent(r.right, r.total)}% верных (${r.total} ответов)`);
   }
 
   // трудные слова
@@ -410,7 +457,6 @@ function buildSpecialChars() {
   for (const ch of SPECIAL_CHARS) {
     const b = document.createElement("button");
     b.type = "button"; // не отправляет форму
-    b.className = "secondary";
     b.textContent = ch;
     b.addEventListener("click", () => insertChar(ch));
     box.append(b);
@@ -440,6 +486,7 @@ async function start() {
   $("btn-setup-back").addEventListener("click", () => showScreen("menu"));
   $("btn-start").addEventListener("click", startQuiz);
   $("btn-finish").addEventListener("click", finishQuiz);
+  $("btn-skip").addEventListener("click", skipAnswer);
   $("quiz").addEventListener("submit", onQuizSubmit);
   $("all-topics").addEventListener("change", onAllTopicsChange);
   $("btn-again").addEventListener("click", () => {

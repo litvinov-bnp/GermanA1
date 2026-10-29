@@ -3,10 +3,10 @@
 
 // Типы вопросов. needsSpeech: для этого типа нужен немецкий голос в браузере.
 const QUESTION_TYPES = {
-  "text-to-ru":  { label: "Текст: немецкое слово → русский перевод",           needsSpeech: false, answerLang: "ru" },
-  "text-to-de":  { label: "Текст: русское слово → немецкое слово",             needsSpeech: false, answerLang: "de" },
-  "audio-to-ru": { label: "Аудирование: слышу немецкое слово → пишу перевод",  needsSpeech: true,  answerLang: "ru" },
-  "audio-to-de": { label: "Диктант: слышу слово → пишу по-немецки",            needsSpeech: true,  answerLang: "de" }
+  "text-to-ru":  { label: "Текст: DE слово → РУС перевод",       needsSpeech: false, answerLang: "ru" },
+  "text-to-de":  { label: "Текст: РУС слово → DE слово",         needsSpeech: false, answerLang: "de" },
+  "audio-to-ru": { label: "Аудирование: DE слово → РУС перевод", needsSpeech: true,  answerLang: "ru" },
+  "audio-to-de": { label: "Диктант: DE слово → DE слово",        needsSpeech: true,  answerLang: "de" }
 };
 
 // Варианты количества слов (0 = без ограничения)

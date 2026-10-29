@@ -21,7 +21,7 @@
       <rect width="5" height="1" y="2" fill="#FFCE00"/>
     </svg>
     <h1>Hallo, Deutsch!</h1>
-    <p>Приложение для изучения 1000 немецких слов (Goethe A1 Wortliste + Grundwortschatz)</p>
+    <p>Приложение для изучения 1000 немецких слов<br>(Goethe A1 Wortliste + Grundwortschatz)</p>
     <p id="load-status">Загрузка словаря…</p>
     <p id="speech-status" class="muted"></p>
     <div class="stack">
@@ -53,7 +53,7 @@
     <p id="setup-info"></p>
     <div class="stack">
       <button id="btn-start">Начать</button>
-      <button id="btn-setup-back" class="secondary">Назад</button>
+      <button id="btn-setup-back" class="orange">Назад</button>
     </div>
   </section>
 
@@ -61,7 +61,7 @@
   <section class="screen" id="screen-quiz" hidden>
     <div class="quiz-top">
       <span id="progress"></span>
-      <button id="btn-finish" class="secondary small">Закончить</button>
+      <button id="btn-finish" class="orange small">Закончить</button>
     </div>
 
     <p id="topic"></p>
@@ -69,16 +69,19 @@
     <p id="hint"></p>
 
     <div id="audio-row" hidden>
-      <button type="button" id="btn-play" class="secondary small">🔊 Слово</button>
-      <button type="button" id="btn-play-slow" class="secondary small">🐢 Медленно</button>
-      <button type="button" id="btn-play-example" class="secondary small" hidden>🔊 Пример</button>
+      <button type="button" id="btn-play" class="neutral small">🔊 Слово</button>
+      <button type="button" id="btn-play-slow" class="neutral small">🐢 Медленно</button>
+      <button type="button" id="btn-play-example" class="neutral small" hidden>🔊 Пример</button>
     </div>
 
     <form id="quiz">
       <input id="answer" type="text" placeholder="Ваш ответ"
              autocomplete="off" autocapitalize="off" spellcheck="false">
       <div id="chars"></div>
-      <button id="action" type="submit">Проверить</button>
+      <div class="stack">
+        <button id="action" type="submit">Проверить</button>
+        <button id="btn-skip" type="button" class="orange">Не знаю</button>
+      </div>
     </form>
 
     <p id="result"></p>
@@ -96,17 +99,18 @@
     </div>
     <div class="stack">
       <button id="btn-again">Ещё раз</button>
-      <button id="btn-result-menu" class="secondary">В меню</button>
+      <button id="btn-result-menu" class="orange">В меню</button>
     </div>
   </section>
 
   <!-- Экран 5: статистика -->
   <section class="screen" id="screen-stats" hidden>
     <h2>Статистика</h2>
-    <p id="stats-summary"></p>
+    <p id="stats-empty" hidden></p>
+    <ul id="stats-summary" class="plain"></ul>
 
     <div id="stats-details" hidden>
-      <h3>По типам вопросов</h3>
+      <h3>По типам тестов</h3>
       <ul id="stats-types" class="plain"></ul>
 
       <h3>По темам</h3>
@@ -120,11 +124,11 @@
     <h3>Данные</h3>
     <p class="muted">Статистика хранится только в этом браузере. Экспорт сохраняет её в файл, импорт загружает из файла (так можно перенести данные на другое устройство).</p>
     <div class="stack">
-      <button id="btn-export" class="secondary">Экспорт в файл</button>
-      <button id="btn-import" class="secondary">Импорт из файла</button>
-      <button id="btn-reset" class="secondary danger">Сбросить статистику</button>
+      <button id="btn-export">Экспорт в файл</button>
+      <button id="btn-import">Импорт из файла</button>
+      <button id="btn-reset" class="orange">Сбросить статистику</button>
       <p id="data-message" class="muted"></p>
-      <button id="btn-stats-back">В меню</button>
+      <button id="btn-stats-back" class="orange">В меню</button>
     </div>
     <input type="file" id="import-file" accept=".json,application/json" hidden>
   </section>
