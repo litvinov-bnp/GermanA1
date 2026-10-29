@@ -178,3 +178,12 @@ button.danger {
   color: #c62828;
   border-color: #c62828;
 }
+
+/* Озвучка */
+#audio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}

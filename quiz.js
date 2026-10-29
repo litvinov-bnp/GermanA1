@@ -1,19 +1,25 @@
 // Логика теста: типы вопросов, проверка ответов, очередь слов.
 // Здесь нет работы со страницей, только данные и правила.
 
-// Типы вопросов. Для аудирования enabled станет true на этапе озвучки.
+// Типы вопросов. needsSpeech: для этого типа нужен немецкий голос в браузере.
 const QUESTION_TYPES = {
-  "text-to-ru":  { label: "Текст: немецкое слово → русский перевод",           enabled: true,  answerLang: "ru" },
-  "text-to-de":  { label: "Текст: русское слово → немецкое слово",             enabled: true,  answerLang: "de" },
-  "audio-to-ru": { label: "Аудирование: слышу немецкое слово → пишу перевод",  enabled: false, answerLang: "ru" },
-  "audio-to-de": { label: "Диктант: слышу слово → пишу по-немецки",            enabled: false, answerLang: "de" }
+  "text-to-ru":  { label: "Текст: немецкое слово → русский перевод",           needsSpeech: false, answerLang: "ru" },
+  "text-to-de":  { label: "Текст: русское слово → немецкое слово",             needsSpeech: false, answerLang: "de" },
+  "audio-to-ru": { label: "Аудирование: слышу немецкое слово → пишу перевод",  needsSpeech: true,  answerLang: "ru" },
+  "audio-to-de": { label: "Диктант: слышу слово → пишу по-немецки",            needsSpeech: true,  answerLang: "de" }
 };
 
 // Варианты количества слов (0 = без ограничения)
 const COUNT_OPTIONS = [25, 50, 75, 0];
 
+// Тип доступен, если ему не нужна озвучка или в браузере есть немецкий голос
+function isTypeEnabled(type) {
+  const info = QUESTION_TYPES[type];
+  return Boolean(info) && (!info.needsSpeech || hasGermanVoice());
+}
+
 function enabledTypes() {
-  return Object.keys(QUESTION_TYPES).filter(t => QUESTION_TYPES[t].enabled);
+  return Object.keys(QUESTION_TYPES).filter(isTypeEnabled);
 }
 
 // Перемешивание списка (алгоритм Фишера-Йетса), исходный список не меняется

@@ -47,8 +47,7 @@ function makeSettings() {
   result.topics = result.topics.filter(t => allTopics.includes(t));
   if (result.topics.length === 0) result.topics = allTopics;
   if (!COUNT_OPTIONS.includes(result.count)) result.count = defaults.count;
-  const typeOk = result.type === "mixed" ||
-    (QUESTION_TYPES[result.type] && QUESTION_TYPES[result.type].enabled);
+  const typeOk = result.type === "mixed" || isTypeEnabled(result.type);
   if (!typeOk) result.type = defaults.type;
   return result;
 }
@@ -96,8 +95,9 @@ function renderSetup() {
   typeBox.replaceChildren();
   for (const key of Object.keys(QUESTION_TYPES)) {
     const t = QUESTION_TYPES[key];
-    const text = t.enabled ? t.label : t.label + " (скоро)";
-    const { label, input } = makeOption("radio", "type", key, text, settings.type === key, !t.enabled);
+    const enabled = isTypeEnabled(key);
+    const text = enabled ? t.label : t.label + " (нужен немецкий голос в браузере)";
+    const { label, input } = makeOption("radio", "type", key, text, settings.type === key, !enabled);
     input.addEventListener("change", onSetupChange);
     typeBox.append(label);
   }
@@ -172,12 +172,13 @@ function showQuestion() {
 
   const { word, type } = question;
   const toDe = QUESTION_TYPES[type].answerLang === "de";
+  const isAudio = type.startsWith("audio");
 
   $("progress").textContent = session.settings.count > 0
     ? `Слово ${session.position} из ${session.queue.length}`
     : `Слово ${session.position}`;
   $("topic").textContent = word.topic;
-  $("prompt").textContent = toDe ? word.ru : word.de;
+  $("prompt").textContent = isAudio ? "🎧 Послушайте слово" : (toDe ? word.ru : word.de);
 
   let hint = "";
   if (toDe && word.pos === "сущ.") {
@@ -185,6 +186,8 @@ function showQuestion() {
     hint = hasArticle
       ? "Существительное: с артиклем и с большой буквы"
       : "Существительное: с большой буквы";
+  } else if (isAudio && !toDe) {
+    hint = "Напишите перевод по-русски";
   }
   $("hint").textContent = hint;
 
@@ -201,6 +204,22 @@ function showQuestion() {
 
   $("chars").hidden = !toDe;
   $("action").textContent = "Проверить";
+
+  updateAudioRow();
+  if (isAudio) speakWord(word); // в аудио-вопросах слово звучит сразу
+}
+
+// Кнопки озвучки: показываем, когда есть голос и немецкое слово либо видно, либо уже раскрыто
+function updateAudioRow() {
+  const type = question.type;
+  const germanVisible = type === "text-to-ru" || type.startsWith("audio");
+  $("audio-row").hidden = !(hasGermanVoice() && (germanVisible || answered));
+  $("btn-play-example").hidden = !answered;
+}
+
+function playWord(rate) {
+  speakWord(question.word, rate);
+  if (!answered) $("answer").focus();
 }
 
 function checkAnswer() {
@@ -223,14 +242,17 @@ function checkAnswer() {
   $("result").textContent = ok ? "Верно! " + correct : "Неверно. Правильно: " + correct;
   $("result").className = ok ? "ok" : "bad";
 
+  const extra = [];
+  if (type.startsWith("audio")) extra.push(`${word.de} — ${word.ru}`);
   if (word.pos === "сущ.") {
-    $("extra").textContent = word.plural
-      ? "Мн. число: " + word.plural
-      : (word.plural_only ? "Только во мн. числе" : "");
+    if (word.plural) extra.push("Мн. число: " + word.plural);
+    else if (word.plural_only) extra.push("Только во мн. числе");
   }
+  $("extra").textContent = extra.join(" · ");
   $("example").textContent = word.example_de + " — " + word.example_ru;
 
   answered = true;
+  updateAudioRow();
   $("answer").disabled = true;
   $("chars").hidden = true;
   $("action").textContent = isLastQuestion(session) ? "Результаты" : "Дальше";
@@ -395,8 +417,22 @@ function buildSpecialChars() {
   }
 }
 
+function updateSpeechStatus() {
+  if (!speechSupported()) {
+    $("speech-status").textContent = "Озвучка: этот браузер не поддерживает синтез речи.";
+  } else if (hasGermanVoice()) {
+    $("speech-status").textContent = "Озвучка: " + germanVoiceName();
+  } else {
+    $("speech-status").textContent = "Озвучка: немецкий голос не найден, аудио-режимы недоступны.";
+  }
+}
+
 async function start() {
   buildSpecialChars();
+
+  $("btn-play").addEventListener("click", () => playWord(0.9));
+  $("btn-play-slow").addEventListener("click", () => playWord(0.55));
+  $("btn-play-example").addEventListener("click", () => speak(question.word.example_de, 0.9));
 
   // кнопки (работают сразу, но неактивные до загрузки словаря)
   $("btn-study").addEventListener("click", () => { renderSetup(); showScreen("setup"); });
@@ -423,7 +459,8 @@ async function start() {
   });
 
   try {
-    await loadWords();
+    await Promise.all([loadWords(), initSpeech(updateSpeechStatus)]);
+    updateSpeechStatus();
   } catch (e) {
     $("load-status").textContent =
       "Не удалось загрузить words.json. Откройте сайт через Live Server или по адресу GitHub Pages.";

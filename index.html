@@ -8,6 +8,7 @@
   <script src="storage.js" defer></script>
   <script src="quiz.js" defer></script>
   <script src="stats.js" defer></script>
+  <script src="speech.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -22,6 +23,7 @@
     <h1>Hallo, Deutsch!</h1>
     <p>Приложение для изучения 1000 немецких слов (Goethe A1 Wortliste + Grundwortschatz)</p>
     <p id="load-status">Загрузка словаря…</p>
+    <p id="speech-status" class="muted"></p>
     <div class="stack">
       <button id="btn-study" disabled>Изучение</button>
       <button id="btn-stats" disabled>Статистика</button>
@@ -65,6 +67,12 @@
     <p id="topic"></p>
     <h2 id="prompt"></h2>
     <p id="hint"></p>
+
+    <div id="audio-row" hidden>
+      <button type="button" id="btn-play" class="secondary small">🔊 Слово</button>
+      <button type="button" id="btn-play-slow" class="secondary small">🐢 Медленно</button>
+      <button type="button" id="btn-play-example" class="secondary small" hidden>🔊 Пример</button>
+    </div>
 
     <form id="quiz">
       <input id="answer" type="text" placeholder="Ваш ответ"
