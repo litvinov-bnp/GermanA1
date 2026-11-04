@@ -74,6 +74,17 @@
       <button type="button" id="btn-play-example" class="neutral small" hidden>🔊 Пример</button>
     </div>
 
+    <!-- Для типов с самопроверкой: правильный ответ и выбор «Правильно / Неправильно» -->
+    <div id="reveal" hidden>
+      <p id="reveal-answer"></p>
+      <p id="reveal-extra"></p>
+      <p id="reveal-example"></p>
+      <div class="stack">
+        <button id="btn-right" type="button">Правильно</button>
+        <button id="btn-wrong" type="button" class="orange">Неправильно</button>
+      </div>
+    </div>
+
     <form id="quiz">
       <input id="answer" type="text" placeholder="Ваш ответ"
              autocomplete="off" autocapitalize="off" spellcheck="false">

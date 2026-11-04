@@ -1,13 +1,19 @@
 // Логика теста: типы вопросов, проверка ответов, очередь слов.
 // Здесь нет работы со страницей, только данные и правила.
 
-// Типы вопросов. needsSpeech: для этого типа нужен немецкий голос в браузере.
+// Типы вопросов.
+// needsSpeech: нужен немецкий голос в браузере.
+// selfCheck: ответ не набирается, пользователь сам решает, вспомнил ли он слово.
 const QUESTION_TYPES = {
-  "text-to-ru":  { label: "Текст: DE слово → РУС перевод",       needsSpeech: false, answerLang: "ru" },
-  "text-to-de":  { label: "Текст: РУС слово → DE слово",         needsSpeech: false, answerLang: "de" },
-  "audio-to-ru": { label: "Аудирование: DE слово → РУС перевод", needsSpeech: true,  answerLang: "ru" },
-  "audio-to-de": { label: "Диктант: DE слово → DE слово",        needsSpeech: true,  answerLang: "de" }
+  "text-to-ru":  { label: "Текст: DE слово → РУС перевод",       needsSpeech: false, selfCheck: true,  answerLang: "ru" },
+  "text-to-de":  { label: "Текст: РУС слово → DE слово",         needsSpeech: false, selfCheck: false, answerLang: "de" },
+  "audio-to-ru": { label: "Аудирование: DE слово → РУС перевод", needsSpeech: true,  selfCheck: true,  answerLang: "ru" },
+  "audio-to-de": { label: "Диктант: DE слово → DE слово",        needsSpeech: true,  selfCheck: false, answerLang: "de" }
 };
+
+function isSelfCheck(type) {
+  return QUESTION_TYPES[type].selfCheck;
+}
 
 // Варианты количества слов (0 = без ограничения)
 const COUNT_OPTIONS = [25, 50, 75, 0];

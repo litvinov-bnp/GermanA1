@@ -5,6 +5,7 @@
   --orange-dark: #f58d2e;
   --ok: #1a7f37;
   --bad: #c62828;
+  --button-max: 18.2rem; /* ширина больших кнопок (то же, что 14em при шрифте кнопок 1.3rem) */
 }
 
 body {
@@ -47,7 +48,7 @@ button {
   font-family: inherit;
   font-size: 1.3rem;
   font-weight: normal;
-  padding: 12px 20px;
+  padding: 12px 16px;
   color: #fff;
   background: var(--teal);
   border: none;
@@ -92,16 +93,30 @@ button:disabled {
 .stack {
   display: flex;
   flex-direction: column;
+  align-items: center;   /* кнопки по центру, а не на всю ширину */
   gap: 12px;
   margin-top: 16px;
 }
 
+/* Крупные кнопки одной ширины: чуть шире самой длинной надписи («Сбросить статистику»).
+   Ширина в em растёт вместе с размером шрифта, а на очень узком экране
+   кнопка просто занимает всю доступную ширину. */
+.stack > button {
+  width: 100%;
+  max-width: var(--button-max);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Поле ввода и ряд букв выровнены по ширине кнопок */
 input[type="text"] {
+  display: block;
   font-size: 1.1rem;
   padding: 12px;
   width: 100%;
+  max-width: var(--button-max);
   box-sizing: border-box;
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
 }
 
 /* Настройка теста */
@@ -165,7 +180,8 @@ legend {
   flex-wrap: wrap;
   gap: 6px;
   justify-content: center;
-  margin-bottom: 12px;
+  max-width: var(--button-max);
+  margin: 0 auto 12px;
 }
 
 #chars button {
@@ -201,8 +217,21 @@ legend {
   color: var(--bad);
 }
 
+/* Блок с ответом для самопроверки */
+#reveal-answer {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 16px 0 8px;
+}
+
+#reveal-extra,
 #extra {
   color: #555;
+}
+
+#reveal-example {
+  color: #555;
+  font-style: italic;
 }
 
 #example {
@@ -236,4 +265,9 @@ ul.plain {
 ul.plain li,
 ol.plain li {
   padding: 4px 0;
+}
+
+/* Пустое сообщение не занимает места */
+#data-message:empty {
+  display: none;
 }

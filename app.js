@@ -5,7 +5,8 @@ let words = [];        // весь словарь
 let settings = null;   // настройки теста
 let session = null;    // текущий тест
 let question = null;   // текущий вопрос: { word, type }
-let answered = false;  // на текущий вопрос уже ответили?
+let answered = false;  // результат по текущему вопросу уже записан?
+let revealed = false;  // правильный ответ уже показан?
 
 const SPECIAL_CHARS = "äöüßÄÖÜ";
 
@@ -169,10 +170,12 @@ function showQuestion() {
     return;
   }
   answered = false;
+  revealed = false;
 
   const { word, type } = question;
   const toDe = QUESTION_TYPES[type].answerLang === "de";
   const isAudio = type.startsWith("audio");
+  const selfCheck = isSelfCheck(type);
 
   $("progress").textContent = session.settings.count > 0
     ? `Слово ${session.position} из ${session.queue.length}`
@@ -186,8 +189,8 @@ function showQuestion() {
     hint = hasArticle
       ? "Существительное: с артиклем и с большой буквы"
       : "Существительное: с большой буквы";
-  } else if (isAudio && !toDe) {
-    hint = "Напишите перевод по-русски";
+  } else if (selfCheck) {
+    hint = "Вспомните перевод и нажмите «Я знаю»";
   }
   $("hint").textContent = hint;
 
@@ -195,17 +198,21 @@ function showQuestion() {
   $("result").className = "";
   $("extra").textContent = "";
   $("example").textContent = "";
+  $("reveal").hidden = true;
 
+  // поле ввода нужно только там, где ответ набирается
   const input = $("answer");
   input.value = "";
   input.readOnly = false;
   input.className = "";
-  $("btn-skip").hidden = false;
+  input.hidden = selfCheck;
   input.placeholder = toDe ? "Ответ по-немецки" : "Перевод по-русски";
-  input.focus();
+  if (!selfCheck) input.focus();
 
   $("chars").hidden = !toDe;
-  $("action").textContent = "Проверить";
+  $("action").hidden = false;
+  $("btn-skip").hidden = false;
+  $("action").textContent = selfCheck ? "Я знаю" : "Проверить";
 
   updateAudioRow();
   if (isAudio) speakWord(word); // в аудио-вопросах слово звучит сразу
@@ -215,14 +222,43 @@ function showQuestion() {
 function updateAudioRow() {
   const type = question.type;
   const germanVisible = type === "text-to-ru" || type.startsWith("audio");
-  $("audio-row").hidden = !(hasGermanVoice() && (germanVisible || answered));
-  $("btn-play-example").hidden = !answered;
+  $("audio-row").hidden = !(hasGermanVoice() && (germanVisible || revealed));
+  $("btn-play-example").hidden = !revealed;
 }
 
 function playWord(rate) {
   speakWord(question.word, rate);
-  if (!answered) $("answer").focus();
+  if (!revealed && !isSelfCheck(question.type)) $("answer").focus();
 }
+
+// Записать результат ответа в статистику и в счётчики теста
+function registerResult(ok) {
+  const { word, type } = question;
+  recordAnswer(word.id, type, ok);
+  if (ok) {
+    session.right += 1;
+  } else {
+    session.wrong += 1;
+    if (!session.mistakes.includes(word)) session.mistakes.push(word);
+  }
+}
+
+// Дополнительные строки под ответом: слово и множественное число, пример
+function detailLines(word, type) {
+  const extra = [];
+  if (type.startsWith("audio")) extra.push(`${word.de} — ${word.ru}`);
+  if (word.pos === "сущ.") {
+    if (word.plural) extra.push("Мн. число: die " + word.plural);
+    else if (word.plural_only) extra.push("Только во мн. числе");
+    else extra.push("Мн. число: нет");
+  }
+  return {
+    extra: extra.join(" · "),
+    example: word.example_de + " — " + word.example_ru
+  };
+}
+
+// ---- Типы с набором ответа: «Проверить»
 
 function checkAnswer() {
   const { word, type } = question;
@@ -243,14 +279,7 @@ function skipAnswer() {
 function showFeedback(ok, skipped) {
   const { word, type } = question;
   const toDe = QUESTION_TYPES[type].answerLang === "de";
-  recordAnswer(word.id, type, ok);
-
-  if (ok) {
-    session.right += 1;
-  } else {
-    session.wrong += 1;
-    if (!session.mistakes.includes(word)) session.mistakes.push(word);
-  }
+  registerResult(ok);
 
   const correct = toDe ? word.de : word.ru;
   if (ok) {
@@ -267,19 +296,14 @@ function showFeedback(ok, skipped) {
   input.className = skipped ? "" : (ok ? "ok" : "bad");
   input.readOnly = true;
   // при верном ответе по-русски дописываем в поле полный перевод (все варианты)
-  if (ok && !toDe) input.value = word.ru;
+  if (ok && !toDe && !input.hidden) input.value = word.ru;
 
-  const extra = [];
-  if (type.startsWith("audio")) extra.push(`${word.de} — ${word.ru}`);
-  if (word.pos === "сущ.") {
-    if (word.plural) extra.push("Мн. число: die " + word.plural);
-    else if (word.plural_only) extra.push("Только во мн. числе");
-    else extra.push("Мн. число: нет");
-  }
-  $("extra").textContent = extra.join(" · ");
-  $("example").textContent = word.example_de + " — " + word.example_ru;
+  const d = detailLines(word, type);
+  $("extra").textContent = d.extra;
+  $("example").textContent = d.example;
 
   answered = true;
+  revealed = true;
   updateAudioRow();
   $("chars").hidden = true;
   $("btn-skip").hidden = true;
@@ -287,14 +311,45 @@ function showFeedback(ok, skipped) {
   $("action").focus();
 }
 
-function onQuizSubmit(event) {
-  event.preventDefault(); // не перезагружать страницу
-  if (!answered) {
-    checkAnswer();
-  } else if (isLastQuestion(session)) {
+// ---- Типы с самопроверкой: «Я знаю» → ответ → «Правильно» / «Неправильно»
+
+function revealAnswer() {
+  const { word, type } = question;
+  const d = detailLines(word, type);
+  $("reveal-answer").textContent = word.ru;
+  $("reveal-extra").textContent = d.extra;
+  $("reveal-example").textContent = d.example;
+  $("reveal").hidden = false;
+  $("action").hidden = true;
+  $("btn-skip").hidden = true;
+  revealed = true;
+  updateAudioRow();
+}
+
+// Пользователь сам решает, вспомнил ли он слово; после выбора сразу идём дальше
+function chooseSelfCheck(ok) {
+  if (answered || !revealed) return;
+  registerResult(ok);
+  answered = true;
+  if (isLastQuestion(session)) {
     finishQuiz();
   } else {
     showQuestion();
+  }
+}
+
+function onQuizSubmit(event) {
+  event.preventDefault(); // не перезагружать страницу
+  if (answered) {
+    if (isLastQuestion(session)) {
+      finishQuiz();
+    } else {
+      showQuestion();
+    }
+  } else if (isSelfCheck(question.type)) {
+    if (!revealed) revealAnswer();
+  } else {
+    checkAnswer();
   }
 }
 
@@ -487,6 +542,8 @@ async function start() {
   $("btn-start").addEventListener("click", startQuiz);
   $("btn-finish").addEventListener("click", finishQuiz);
   $("btn-skip").addEventListener("click", skipAnswer);
+  $("btn-right").addEventListener("click", () => chooseSelfCheck(true));
+  $("btn-wrong").addEventListener("click", () => chooseSelfCheck(false));
   $("quiz").addEventListener("submit", onQuizSubmit);
   $("all-topics").addEventListener("change", onAllTopicsChange);
   $("btn-again").addEventListener("click", () => {
