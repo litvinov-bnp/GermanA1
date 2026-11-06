@@ -271,3 +271,17 @@ ol.plain li {
 #data-message:empty {
   display: none;
 }
+
+/* Слово из списка ошибок, которое сейчас звучит */
+#mistakes li {
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+#mistakes li.speaking {
+  background: #d9f5f1;
+}
+
+#btn-mistakes-audio {
+  margin-top: 8px;
+}

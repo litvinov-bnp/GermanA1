@@ -52,16 +52,72 @@ function initSpeech(onChange) {
   });
 }
 
-// Произнести текст по-немецки. rate: 1 обычная скорость, меньше 1 медленнее.
-function speak(text, rate = 0.9) {
-  if (!germanVoice) return;
-  const synth = window.speechSynthesis;
-  synth.cancel(); // остановить то, что звучит сейчас
+// ---------- Управление озвучкой ----------
+
+let speechTimer = null; // таймер отложенной озвучки или паузы между словами
+let speechToken = 0;    // «номер версии» озвучки: при его смене старая очередь прекращается
+
+// Остановить всё, что звучит, и отменить всё, что запланировано
+function cancelSpeech() {
+  speechToken += 1;
+  clearTimeout(speechTimer);
+  if (speechSupported()) window.speechSynthesis.cancel();
+}
+
+// Произнести текст один раз. onEnd вызывается, когда речь закончилась
+// (или при ошибке, или через 8 секунд: некоторые голоса не сообщают об окончании).
+function speakRaw(text, rate, onEnd) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = germanVoice;
   utterance.lang = germanVoice.lang;
   utterance.rate = rate;
-  synth.speak(utterance);
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (onEnd) onEnd();
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  setTimeout(finish, 8000);
+  window.speechSynthesis.speak(utterance);
+}
+
+// Произнести текст по-немецки. rate: 1 обычная скорость, меньше 1 медленнее.
+function speak(text, rate = 0.9) {
+  if (!germanVoice) return;
+  cancelSpeech(); // остановить то, что звучит сейчас
+  speakRaw(text, rate);
+}
+
+// То же, но с небольшой задержкой (чтобы звук не накладывался на нажатие кнопки)
+function speakLater(text, delay = 400, rate = 0.9) {
+  if (!germanVoice) return;
+  cancelSpeech();
+  speechTimer = setTimeout(() => speakRaw(text, rate), delay);
+}
+
+// Озвучить список по очереди с паузой gap (мс) после каждого.
+// onStart(i) вызывается перед i-м элементом, onDone() после последнего.
+function speakQueue(texts, { startDelay = 500, gap = 1200, onStart, onDone } = {}) {
+  if (!germanVoice) return;
+  cancelSpeech();
+  const token = speechToken;
+  let i = 0;
+  const next = () => {
+    if (token !== speechToken) return; // озвучку остановили
+    if (i >= texts.length) {
+      if (onDone) onDone();
+      return;
+    }
+    const index = i++;
+    if (onStart) onStart(index);
+    speakRaw(texts[index], 0.9, () => {
+      if (token !== speechToken) return;
+      speechTimer = setTimeout(next, gap);
+    });
+  };
+  speechTimer = setTimeout(next, startDelay);
 }
 
 // Слово произносится так, как оно записано в основной форме (с артиклем у существительных)

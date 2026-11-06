@@ -17,6 +17,7 @@ function $(id) {
 // ---------- Экраны ----------
 
 function showScreen(name) {
+  cancelSpeech(); // при смене экрана озвучка прекращается
   document.querySelectorAll(".screen").forEach(el => {
     el.hidden = el.id !== "screen-" + name;
   });
@@ -164,6 +165,7 @@ function startQuiz() {
 }
 
 function showQuestion() {
+  cancelSpeech(); // не договаривать слово или пример от прошлого вопроса
   question = nextQuestion(session);
   if (!question) {
     finishQuiz();
@@ -199,6 +201,7 @@ function showQuestion() {
   $("extra").textContent = "";
   $("example").textContent = "";
   $("reveal").hidden = true;
+  $("self-buttons").hidden = false;
 
   // поле ввода нужно только там, где ответ набирается
   const input = $("answer");
@@ -215,7 +218,8 @@ function showQuestion() {
   $("action").textContent = selfCheck ? "Я знаю" : "Проверить";
 
   updateAudioRow();
-  if (isAudio) speakWord(word); // в аудио-вопросах слово звучит сразу
+  // слово звучит сразу: в аудио-вопросах и когда оно показано на экране (DE → РУС)
+  if (isAudio || type === "text-to-ru") speakWord(word);
 }
 
 // Кнопки озвучки: показываем, когда есть голос и немецкое слово либо видно, либо уже раскрыто
@@ -309,6 +313,10 @@ function showFeedback(ok, skipped) {
   $("btn-skip").hidden = true;
   $("action").textContent = isLastQuestion(session) ? "Результаты" : "Дальше";
   $("action").focus();
+
+  // автоматическая озвучка
+  if (type === "text-to-de") speakLater(word.de_accept[0]);                    // слово (при любом исходе)
+  if (isSelfCheck(type) && !ok) speakLater(word.example_de);                   // пример
 }
 
 // ---- Типы с самопроверкой: «Я знаю» → ответ → «Правильно» / «Неправильно»
@@ -331,11 +339,22 @@ function chooseSelfCheck(ok) {
   if (answered || !revealed) return;
   registerResult(ok);
   answered = true;
-  if (isLastQuestion(session)) {
-    finishQuiz();
-  } else {
-    showQuestion();
+
+  if (ok) {
+    if (isLastQuestion(session)) {
+      finishQuiz();
+    } else {
+      showQuestion();
+    }
+    return;
   }
+
+  // «Неправильно»: остаёмся на экране, озвучиваем пример и ждём «Дальше»
+  $("self-buttons").hidden = true;
+  $("action").hidden = false;
+  $("action").textContent = isLastQuestion(session) ? "Результаты" : "Дальше";
+  $("action").focus();
+  speakLater(question.word.example_de);
 }
 
 function onQuizSubmit(event) {
@@ -382,6 +401,44 @@ function finishQuiz() {
   }
   $("mistakes-box").hidden = session.mistakes.length === 0;
   showScreen("result");
+  startMistakesAudio();
+}
+
+// Список ошибок озвучивается по очереди, текущее слово подсвечивается
+let mistakesPlaying = false;
+
+function resetMistakesHighlight() {
+  document.querySelectorAll("#mistakes li").forEach(li => li.classList.remove("speaking"));
+}
+
+function startMistakesAudio() {
+  const button = $("btn-mistakes-audio");
+  button.hidden = !hasGermanVoice() || session.mistakes.length === 0;
+  mistakesPlaying = false;
+  if (button.hidden) return;
+
+  const items = [...$("mistakes").children];
+  mistakesPlaying = true;
+  button.textContent = "⏹ Остановить";
+  speakQueue(session.mistakes.map(w => w.de_accept[0]), {
+    onStart: i => items.forEach((li, k) => li.classList.toggle("speaking", k === i)),
+    onDone: () => {
+      resetMistakesHighlight();
+      button.textContent = "🔊 Озвучить ещё раз";
+      mistakesPlaying = false;
+    }
+  });
+}
+
+function toggleMistakesAudio() {
+  if (mistakesPlaying) {
+    cancelSpeech();
+    resetMistakesHighlight();
+    $("btn-mistakes-audio").textContent = "🔊 Озвучить ещё раз";
+    mistakesPlaying = false;
+  } else {
+    startMistakesAudio();
+  }
 }
 
 // ---------- Статистика ----------
@@ -542,6 +599,7 @@ async function start() {
   $("btn-start").addEventListener("click", startQuiz);
   $("btn-finish").addEventListener("click", finishQuiz);
   $("btn-skip").addEventListener("click", skipAnswer);
+  $("btn-mistakes-audio").addEventListener("click", toggleMistakesAudio);
   $("btn-right").addEventListener("click", () => chooseSelfCheck(true));
   $("btn-wrong").addEventListener("click", () => chooseSelfCheck(false));
   $("quiz").addEventListener("submit", onQuizSubmit);
